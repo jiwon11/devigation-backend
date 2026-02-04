@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/NestJS-10-E0234E?style=for-the-badge&logo=nestjs" alt="NestJS" />
   <img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql" alt="PostgreSQL" />
   <img src="https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker" alt="Docker" />
-  <img src="https://img.shields.io/badge/Redis-7-DC382D?style=for-the-badge&logo=redis" alt="Redis" />
+  <img src="https://img.shields.io/badge/Railway-Deploy-0B0D0E?style=for-the-badge&logo=railway" alt="Railway" />
 </p>
 
 ## 📋 프로젝트 소개
@@ -37,8 +37,77 @@ Devigation 백엔드는 Docker와 Docker Compose를 기반으로 구축된 마�
 | Auth | Passport.js, JWT |
 | Realtime | Socket.IO |
 | Container | Docker, Docker Compose |
+| Deploy | Railway (무료) |
 | Testing | Jest, Supertest |
 | Documentation | Swagger (OpenAPI 3.0) |
+
+## 🚀 Railway 무료 배포 (권장)
+
+Railway는 **월 $5 무료 크레딧**을 제공하여 프로토타입/MVP 단계에서 **완전 무료**로 사용 가능합니다.
+
+### 빠른 배포 (5분)
+
+```bash
+# 1. Railway CLI 설치
+npm install -g @railway/cli
+
+# 2. 로그인
+railway login
+
+# 3. 프로젝트 생성 & 연결
+railway init
+
+# 4. PostgreSQL 추가 (무료)
+railway add --name postgres
+
+# 5. Redis 추가 (무료)
+railway add --name redis
+
+# 6. 환경변수 설정 (Railway 대시보드 또는 CLI)
+railway variables set DATABASE_URL=${{Postgres.DATABASE_URL}}
+railway variables set REDIS_URL=${{Redis.REDIS_URL}}
+railway variables set JWT_SECRET=your-secret-key
+railway variables set NODE_ENV=production
+
+# 7. 배포
+railway up
+```
+
+### Railway 대시보드 설정
+
+1. [railway.app](https://railway.app) 접속 → GitHub 로그인
+2. **New Project** → **Deploy from GitHub repo** 선택
+3. `devigation-backend` 리포지토리 연결
+4. **Add Database** → PostgreSQL, Redis 추가
+5. **Variables** 탭에서 환경변수 설정
+6. 자동 배포 완료! 🎉
+
+### 무료 티어 사양
+
+| 리소스 | 무료 제공량 | 프로토타입 충분? |
+|--------|------------|----------------|
+| 실행 시간 | $5 크레딧/월 | ✅ 충분 |
+| PostgreSQL | 1GB 스토리지 | ✅ 충분 |
+| Redis | 256MB 메모리 | ✅ 충분 |
+| 대역폭 | 100GB/월 | ✅ 충분 |
+| 도메인 | *.up.railway.app | ✅ 제공 |
+
+### railway.json 설정
+
+```json
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "Dockerfile.prod"
+  },
+  "deploy": {
+    "startCommand": "node dist/main.js",
+    "healthcheckPath": "/health",
+    "restartPolicyType": "ON_FAILURE"
+  }
+}
+```
 
 ## 🏗 아키텍처
 
@@ -108,6 +177,10 @@ backend/
 │   │   └── init.sql                # DB 초기화 스크립트
 │   └── redis/
 │       └── redis.conf              # Redis 설정
+├── prisma/
+│   ├── schema.prisma               # Prisma 스키마
+│   ├── migrations/                 # DB 마이그레이션
+│   └── seed.ts                     # 시드 데이터
 ├── src/
 │   ├── common/                     # 공통 모듈
 │   │   ├── decorators/
@@ -121,53 +194,51 @@ backend/
 │   │   └── jwt.config.ts
 │   ├── modules/
 │   │   ├── auth/                   # 인증 모듈
-│   │   │   ├── dto/
-│   │   │   ├── strategies/
-│   │   │   ├── auth.controller.ts
-│   │   │   ├── auth.service.ts
-│   │   │   └── auth.module.ts
 │   │   ├── user/                   # 사용자 모듈
-│   │   │   ├── dto/
-│   │   │   ├── entities/
-│   │   │   ├── user.controller.ts
-│   │   │   ├── user.service.ts
-│   │   │   └── user.module.ts
 │   │   ├── roadmap/                # 로드맵 모듈
-│   │   │   ├── dto/
-│   │   │   ├── entities/
-│   │   │   ├── roadmap.controller.ts
-│   │   │   ├── roadmap.service.ts
-│   │   │   └── roadmap.module.ts
 │   │   ├── post/                   # 게시글 모듈
-│   │   │   ├── dto/
-│   │   │   ├── entities/
-│   │   │   ├── post.controller.ts
-│   │   │   ├── post.service.ts
-│   │   │   └── post.module.ts
 │   │   ├── activity/               # 활동 모듈
 │   │   └── notification/           # 알림 모듈
 │   ├── prisma/
-│   │   ├── schema.prisma           # Prisma 스키마
-│   │   └── migrations/             # DB 마이그레이션
+│   │   └── prisma.service.ts       # Prisma 서비스
 │   ├── app.module.ts
 │   └── main.ts
 ├── test/
 │   ├── unit/
 │   └── e2e/
 ├── .env.example
-├── .env.development
-├── .env.production
 ├── docker-compose.yml              # 개발용
 ├── docker-compose.prod.yml         # 프로덕션용
 ├── Dockerfile
 ├── Dockerfile.prod
+├── railway.json                    # Railway 설정
 ├── package.json
 └── tsconfig.json
 ```
 
-## 🐳 Docker 구성
+## 🐳 Docker 로컬 개발
 
-### docker-compose.yml (개발용)
+### 빠른 시작 (Docker)
+
+```bash
+# 저장소 클론
+git clone https://github.com/jiwon11/devigation-backend.git
+cd devigation-backend
+
+# 환경 변수 설정
+cp .env.example .env.development
+
+# Docker Compose로 실행
+docker-compose up -d
+
+# 마이그레이션 실행
+docker-compose exec api pnpm prisma migrate dev
+
+# 시드 데이터 적용
+docker-compose exec api pnpm prisma db seed
+```
+
+### docker-compose.yml
 
 ```yaml
 version: '3.8'
@@ -204,7 +275,6 @@ services:
       - POSTGRES_DB=devigation
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - devigation-network
 
@@ -215,8 +285,6 @@ services:
       - "6379:6379"
     volumes:
       - redis-data:/data
-      - ./docker/redis/redis.conf:/usr/local/etc/redis/redis.conf
-    command: redis-server /usr/local/etc/redis/redis.conf
     networks:
       - devigation-network
 
@@ -245,269 +313,29 @@ networks:
     driver: bridge
 ```
 
-### Dockerfile (개발용)
-
-```dockerfile
-FROM node:20-alpine
-
-WORKDIR /app
-
-# Install pnpm
-RUN npm install -g pnpm
-
-# Copy package files
-COPY package.json pnpm-lock.yaml ./
-
-# Install dependencies
-RUN pnpm install
-
-# Copy source code
-COPY . .
-
-# Generate Prisma client
-RUN pnpm prisma generate
-
-# Expose port
-EXPOSE 3000
-
-# Start development server
-CMD ["pnpm", "start:dev"]
-```
-
-### Dockerfile.prod (프로덕션용)
-
-```dockerfile
-# Build stage
-FROM node:20-alpine AS builder
-
-WORKDIR /app
-
-RUN npm install -g pnpm
-
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
-
-COPY . .
-RUN pnpm prisma generate
-RUN pnpm build
-
-# Production stage
-FROM node:20-alpine AS production
-
-WORKDIR /app
-
-RUN npm install -g pnpm
-
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/prisma ./prisma
-
-ENV NODE_ENV=production
-
-EXPOSE 3000
-
-CMD ["node", "dist/main.js"]
-```
-
-## 🗄 데이터베이스 스키마 (Prisma)
-
-```prisma
-// prisma/schema.prisma
-
-generator client {
-  provider = "prisma-client-js"
-}
-
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
-model User {
-  id          String   @id @default(uuid())
-  email       String   @unique
-  username    String   @unique
-  displayName String?  @map("display_name")
-  avatarUrl   String?  @map("avatar_url")
-  bio         String?
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  roadmaps    Roadmap[]
-  posts       Post[]
-  comments    Comment[]
-  likes       Like[]
-  activities  Activity[]
-  followers   Follow[]  @relation("following")
-  following   Follow[]  @relation("follower")
-
-  @@map("users")
-}
-
-model Roadmap {
-  id          String   @id @default(uuid())
-  userId      String   @map("user_id")
-  title       String
-  description String?
-  category    String
-  nodes       Json     @default("[]")
-  edges       Json     @default("[]")
-  isPublic    Boolean  @default(true) @map("is_public")
-  forkCount   Int      @default(0) @map("fork_count")
-  starCount   Int      @default(0) @map("star_count")
-  forkedFrom  String?  @map("forked_from")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  posts       Post[]
-  stars       Star[]
-
-  @@map("roadmaps")
-}
-
-model Post {
-  id           String   @id @default(uuid())
-  userId       String   @map("user_id")
-  roadmapId    String?  @map("roadmap_id")
-  nodeId       String?  @map("node_id")
-  title        String
-  content      String
-  excerpt      String?
-  tags         String[]
-  likeCount    Int      @default(0) @map("like_count")
-  commentCount Int      @default(0) @map("comment_count")
-  viewCount    Int      @default(0) @map("view_count")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  roadmap      Roadmap?  @relation(fields: [roadmapId], references: [id])
-  comments     Comment[]
-  likes        Like[]
-
-  @@map("posts")
-}
-
-model Comment {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
-  postId    String   @map("post_id")
-  parentId  String?  @map("parent_id")
-  content   String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
-  replies   Comment[] @relation("CommentReplies")
-
-  @@map("comments")
-}
-
-model Like {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
-  postId    String   @map("post_id")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post      Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, postId])
-  @@map("likes")
-}
-
-model Star {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
-  roadmapId String   @map("roadmap_id")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  roadmap   Roadmap @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, roadmapId])
-  @@map("stars")
-}
-
-model Follow {
-  id          String   @id @default(uuid())
-  followerId  String   @map("follower_id")
-  followingId String   @map("following_id")
-  createdAt   DateTime @default(now()) @map("created_at")
-
-  follower    User @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
-  following   User @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
-
-  @@unique([followerId, followingId])
-  @@map("follows")
-}
-
-model Activity {
-  id           String   @id @default(uuid())
-  userId       String   @map("user_id")
-  activityType String   @map("activity_type")
-  targetId     String?  @map("target_id")
-  score        Int      @default(0)
-  createdAt    DateTime @default(now()) @map("created_at")
-
-  user         User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("activities")
-}
-```
-
-## 🚀 시작하기
-
-### 사전 요구사항
-
-- Docker 24.0+
-- Docker Compose 2.0+
-- Node.js 20 LTS (로컬 개발 시)
-- pnpm 8.0+
-
-### 빠른 시작 (Docker)
+### Docker 명령어
 
 ```bash
-# 저장소 클론
-git clone https://github.com/jiwon11/devigation-backend.git
-cd devigation-backend
-
-# 환경 변수 설정
-cp .env.example .env.development
-
-# Docker Compose로 실행
+# 전체 서비스 시작
 docker-compose up -d
 
-# 마이그레이션 실행
-docker-compose exec api pnpm prisma migrate dev
+# 로그 확인
+docker-compose logs -f api
 
-# 시드 데이터 적용
-docker-compose exec api pnpm prisma db seed
+# 특정 서비스 재시작
+docker-compose restart api
+
+# 전체 서비스 중지
+docker-compose down
+
+# 볼륨 포함 삭제
+docker-compose down -v
+
+# 프로덕션 빌드 & 실행
+docker-compose -f docker-compose.prod.yml up -d --build
 ```
 
-### 로컬 개발 (Docker 없이)
-
-```bash
-# 의존성 설치
-pnpm install
-
-# 환경 변수 설정
-cp .env.example .env
-
-# Prisma 클라이언트 생성
-pnpm prisma generate
-
-# 마이그레이션 실행
-pnpm prisma migrate dev
-
-# 개발 서버 실행
-pnpm start:dev
-```
-
-### 환경 변수
+## 🔧 환경 변수
 
 ```env
 # App
@@ -534,12 +362,12 @@ GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
 GOOGLE_CALLBACK_URL=http://localhost:3000/auth/google/callback
 
-# Storage (MinIO)
-MINIO_ENDPOINT=localhost
-MINIO_PORT=9000
-MINIO_ACCESS_KEY=devigation
-MINIO_SECRET_KEY=devigation123
-MINIO_BUCKET=devigation
+# Storage (MinIO / Cloudflare R2)
+STORAGE_ENDPOINT=localhost
+STORAGE_PORT=9000
+STORAGE_ACCESS_KEY=devigation
+STORAGE_SECRET_KEY=devigation123
+STORAGE_BUCKET=devigation
 
 # Frontend URL
 FRONTEND_URL=http://localhost:3001
@@ -595,47 +423,16 @@ FRONTEND_URL=http://localhost:3001
 
 ### API 문서
 
-Swagger UI: http://localhost:3000/api/docs
+- **로컬**: http://localhost:3000/api/docs
+- **Railway**: https://your-app.up.railway.app/api/docs
 
-## 🐳 Docker 명령어
+## 💰 비용 비교
 
-```bash
-# 전체 서비스 시작
-docker-compose up -d
-
-# 로그 확인
-docker-compose logs -f api
-
-# 특정 서비스 재시작
-docker-compose restart api
-
-# 전체 서비스 중지
-docker-compose down
-
-# 볼륨 포함 삭제
-docker-compose down -v
-
-# 프로덕션 빌드 & 실행
-docker-compose -f docker-compose.prod.yml up -d --build
-```
-
-## 📊 활동 점수 계산
-
-```typescript
-// src/modules/activity/activity.constants.ts
-export const ACTIVITY_WEIGHTS = {
-  POST: 100,       // 게시글 작성
-  ROADMAP: 300,    // 로드맵 생성
-  COMMENT: 10,     // 댓글 작성
-  LIKE: 1,         // 좋아요 받음
-  CHAT: 1,         // 채팅 메시지
-} as const;
-
-// 레벨 계산
-export const calculateLevel = (score: number): number => {
-  return Math.floor(Math.sqrt(score / 100)) + 1;
-};
-```
+| 단계 | 서비스 | 월 비용 | 비고 |
+|------|--------|--------|------|
+| **프로토타입** | Vercel + Railway (무료) | **$0** | MVP 개발 단계 |
+| **초기 런칭** | Vercel + Railway (Hobby) | **$5** | 24시간 가동 |
+| **스케일업** | Vercel Pro + Railway Pro | **$40** | MAU 10,000+ |
 
 ## 🧪 테스트
 
