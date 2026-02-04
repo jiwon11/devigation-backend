@@ -3,12 +3,15 @@ import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
-async function bootstrap() {
+async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
+
+  // Global prefix
+  app.setGlobalPrefix('api/v1');
 
   // CORS
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3001',
+    origin: process.env['CORS_ORIGIN']?.split(',') ?? ['http://localhost:3000'],
     credentials: true,
   });
 
@@ -24,28 +27,19 @@ async function bootstrap() {
     }),
   );
 
-  // Swagger API documentation
+  // Swagger
   const config = new DocumentBuilder()
     .setTitle('Devigation API')
-    .setDescription('개발자를 위한 로드맵 플랫폼 API')
+    .setDescription('Devigation Backend API Documentation')
     .setVersion('1.0')
     .addBearerAuth()
-    .addTag('auth', '인증')
-    .addTag('users', '사용자')
-    .addTag('roadmaps', '로드맵')
-    .addTag('posts', '게시글')
-    .addTag('comments', '댓글')
-    .addTag('activities', '활동')
     .build();
-
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  const port = process.env.PORT || 3000;
+  const port = process.env['PORT'] ?? 8000;
   await app.listen(port);
-
-  console.log(`🚀 Application is running on: http://localhost:${port}`);
-  console.log(`📚 Swagger docs: http://localhost:${port}/api/docs`);
+  console.log(`Application is running on: http://localhost:${port}`);
 }
 
-bootstrap();
+void bootstrap();
