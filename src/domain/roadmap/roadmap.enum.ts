@@ -1,0 +1,34 @@
+export enum RoadmapCategory {
+  FRONTEND = 'FRONTEND',
+  BACKEND = 'BACKEND',
+  DEVOPS = 'DEVOPS',
+  MOBILE = 'MOBILE',
+  AI_ML = 'AI_ML',
+  DATA = 'DATA',
+  SECURITY = 'SECURITY',
+  BLOCKCHAIN = 'BLOCKCHAIN',
+  GAME = 'GAME',
+  OTHER = 'OTHER',
+}
+
+export enum NodeType {
+  TOPIC = 'TOPIC',
+  SUBTOPIC = 'SUBTOPIC',
+  RESOURCE = 'RESOURCE',
+  CHECKPOINT = 'CHECKPOINT',
+  NOTE = 'NOTE',
+}
+
+export enum EdgeType {
+  DEFAULT = 'DEFAULT',
+  PREREQUISITE = 'PREREQUISITE',
+  OPTIONAL = 'OPTIONAL',
+  RELATED = 'RELATED',
+}
+
+export enum NodeStatus {
+  NOT_STARTED = 'NOT_STARTED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  SKIPPED = 'SKIPPED',
+}
