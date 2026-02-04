@@ -3,62 +3,96 @@
 > 개발자의 성장을 위한 로드맵 플랫폼 - 백엔드
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase" alt="Supabase" />
-  <img src="https://img.shields.io/badge/Edge_Functions-Deno-black?style=for-the-badge&logo=deno" alt="Edge Functions" />
-  <img src="https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/Architecture-DDD-purple?style=for-the-badge" alt="DDD" />
+  <img src="https://img.shields.io/badge/Node.js-20_LTS-339933?style=for-the-badge&logo=node.js" alt="Node.js" />
+  <img src="https://img.shields.io/badge/NestJS-10-E0234E?style=for-the-badge&logo=nestjs" alt="NestJS" />
+  <img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker" alt="Docker" />
+  <img src="https://img.shields.io/badge/Redis-7-DC382D?style=for-the-badge&logo=redis" alt="Redis" />
 </p>
 
 ## 📋 프로젝트 소개
 
-Devigation 백엔드는 Supabase를 기반으로 구축된 서버리스 아키텍처입니다. PostgreSQL 데이터베이스, Edge Functions, 실시간 구독, 스토리지를 활용합니다.
+Devigation 백엔드는 Docker와 Docker Compose를 기반으로 구축된 마이크로서비스 아키텍처입니다. NestJS 프레임워크, PostgreSQL, Redis를 활용하여 확장 가능하고 유지보수가 용이한 구조를 제공합니다.
 
 ### 주요 기능
 
-- **사용자 관리**: OAuth 인증 (GitHub, Google), 프로필 관리
+- **사용자 관리**: OAuth 인증 (GitHub, Google), JWT 토큰 기반 인증
 - **로드맵 CRUD**: 로드맵 생성, 수정, 삭제, Fork
 - **게시글 관리**: 마크다운 포스트, 태그, 카테고리
 - **소셜 기능**: 팔로우, 좋아요, 댓글, 북마크
-- **실시간**: 알림, 채팅
+- **실시간**: WebSocket 기반 알림, 채팅
 - **분석**: 활동 지표, 통계
+- **캐싱**: Redis 기반 성능 최적화
 
 ## 🛠 기술 스택
 
 | 카테고리 | 기술 |
 |---------|------|
-| Database | Supabase PostgreSQL |
-| Auth | Supabase Auth (OAuth 2.0) |
-| API | Supabase Edge Functions (Deno) |
-| Realtime | Supabase Realtime |
-| Storage | Supabase Storage |
-| Security | Row Level Security (RLS) |
-| Language | TypeScript, SQL |
+| Runtime | Node.js 20 LTS |
+| Framework | NestJS 10 |
+| Language | TypeScript 5.0+ |
+| Database | PostgreSQL 16 |
+| ORM | Prisma |
+| Cache | Redis 7 |
+| Auth | Passport.js, JWT |
+| Realtime | Socket.IO |
+| Container | Docker, Docker Compose |
+| Testing | Jest, Supertest |
+| Documentation | Swagger (OpenAPI 3.0) |
 
 ## 🏗 아키텍처
 
-### DDD + Hexagonal Architecture
+### DDD + Clean Architecture (Docker 기반)
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         Docker Compose                                   │
+│  ┌─────────────────────────────────────────────────────────────────┐   │
+│  │                        Nginx (Reverse Proxy)                     │   │
+│  │                         Port: 80, 443                            │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+│                                    │                                     │
+│       ┌────────────────────────────┼────────────────────────────┐       │
+│       │                            │                            │       │
+│  ┌────▼────┐    ┌─────────────────▼───────────────────┐   ┌────▼────┐ │
+│  │   API   │    │            API Server               │   │ Socket  │ │
+│  │  Docs   │    │         (NestJS App)                │   │   IO    │ │
+│  │ :3001   │    │            :3000                    │   │  :3002  │ │
+│  └─────────┘    └─────────────────────────────────────┘   └─────────┘ │
+│                                    │                                     │
+│       ┌────────────────────────────┼────────────────────────────┐       │
+│       │                            │                            │       │
+│  ┌────▼────┐              ┌───────▼───────┐              ┌─────▼────┐  │
+│  │  Redis  │              │  PostgreSQL   │              │  MinIO   │  │
+│  │  :6379  │              │    :5432      │              │  :9000   │  │
+│  └─────────┘              └───────────────┘              └──────────┘  │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### 레이어드 아키텍처
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        API Layer                            │
+│                    Presentation Layer                        │
 │  ┌─────────────┐ ┌─────────────┐ ┌─────────────────────┐   │
-│  │ Edge Funcs  │ │  Realtime   │ │    REST (PostgREST) │   │
+│  │ Controllers │ │   Guards    │ │     Interceptors    │   │
 │  └─────────────┘ └─────────────┘ └─────────────────────┘   │
 ├─────────────────────────────────────────────────────────────┤
-│                    Application Layer                        │
+│                    Application Layer                         │
 │  ┌─────────────────────────────────────────────────────┐   │
-│  │              Business Logic / Use Cases              │   │
+│  │              Services / Use Cases                    │   │
 │  └─────────────────────────────────────────────────────┘   │
 ├─────────────────────────────────────────────────────────────┤
-│                      Domain Layer                           │
+│                      Domain Layer                            │
 │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────┐   │
 │  │   User   │ │ Roadmap  │ │   Post   │ │   Activity   │   │
+│  │  Module  │ │  Module  │ │  Module  │ │    Module    │   │
 │  └──────────┘ └──────────┘ └──────────┘ └──────────────┘   │
 ├─────────────────────────────────────────────────────────────┤
-│                   Infrastructure Layer                      │
+│                   Infrastructure Layer                       │
 │  ┌─────────────┐ ┌─────────────┐ ┌─────────────────────┐   │
-│  │  PostgreSQL │ │   Storage   │ │      External       │   │
-│  │  (Supabase) │ │  (Supabase) │ │        APIs         │   │
+│  │   Prisma    │ │    Redis    │ │      External       │   │
+│  │    ORM      │ │    Cache    │ │        APIs         │   │
 │  └─────────────┘ └─────────────┘ └─────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -67,242 +101,540 @@ Devigation 백엔드는 Supabase를 기반으로 구축된 서버리스 아키�
 
 ```
 backend/
-├── supabase/
-│   ├── functions/              # Edge Functions
-│   │   ├── roadmap-fork/      # 로드맵 Fork 기능
-│   │   ├── activity-score/    # 활동 점수 계산
-│   │   ├── notifications/     # 알림 처리
-│   │   └── ai-recommend/      # AI 추천 기능
-│   ├── migrations/             # 데이터베이스 마이그레이션
-│   │   ├── 001_users.sql
-│   │   ├── 002_roadmaps.sql
-│   │   ├── 003_posts.sql
-│   │   ├── 004_social.sql
-│   │   └── 005_activities.sql
-│   ├── seed/                   # 시드 데이터
-│   └── config.toml             # Supabase 설정
+├── docker/
+│   ├── nginx/
+│   │   └── nginx.conf              # Nginx 설정
+│   ├── postgres/
+│   │   └── init.sql                # DB 초기화 스크립트
+│   └── redis/
+│       └── redis.conf              # Redis 설정
 ├── src/
-│   ├── domain/                 # 도메인 모델
-│   │   ├── user/
-│   │   ├── roadmap/
-│   │   ├── post/
-│   │   └── activity/
-│   ├── application/            # 유스케이스
-│   └── infrastructure/         # 외부 서비스 연동
-├── tests/                      # 테스트
-└── package.json
+│   ├── common/                     # 공통 모듈
+│   │   ├── decorators/
+│   │   ├── filters/
+│   │   ├── guards/
+│   │   ├── interceptors/
+│   │   └── pipes/
+│   ├── config/                     # 설정 모듈
+│   │   ├── database.config.ts
+│   │   ├── redis.config.ts
+│   │   └── jwt.config.ts
+│   ├── modules/
+│   │   ├── auth/                   # 인증 모듈
+│   │   │   ├── dto/
+│   │   │   ├── strategies/
+│   │   │   ├── auth.controller.ts
+│   │   │   ├── auth.service.ts
+│   │   │   └── auth.module.ts
+│   │   ├── user/                   # 사용자 모듈
+│   │   │   ├── dto/
+│   │   │   ├── entities/
+│   │   │   ├── user.controller.ts
+│   │   │   ├── user.service.ts
+│   │   │   └── user.module.ts
+│   │   ├── roadmap/                # 로드맵 모듈
+│   │   │   ├── dto/
+│   │   │   ├── entities/
+│   │   │   ├── roadmap.controller.ts
+│   │   │   ├── roadmap.service.ts
+│   │   │   └── roadmap.module.ts
+│   │   ├── post/                   # 게시글 모듈
+│   │   │   ├── dto/
+│   │   │   ├── entities/
+│   │   │   ├── post.controller.ts
+│   │   │   ├── post.service.ts
+│   │   │   └── post.module.ts
+│   │   ├── activity/               # 활동 모듈
+│   │   └── notification/           # 알림 모듈
+│   ├── prisma/
+│   │   ├── schema.prisma           # Prisma 스키마
+│   │   └── migrations/             # DB 마이그레이션
+│   ├── app.module.ts
+│   └── main.ts
+├── test/
+│   ├── unit/
+│   └── e2e/
+├── .env.example
+├── .env.development
+├── .env.production
+├── docker-compose.yml              # 개발용
+├── docker-compose.prod.yml         # 프로덕션용
+├── Dockerfile
+├── Dockerfile.prod
+├── package.json
+└── tsconfig.json
 ```
 
-## 🗄 데이터베이스 스키마
+## 🐳 Docker 구성
 
-### 주요 테이블
+### docker-compose.yml (개발용)
 
-```sql
--- 사용자
-users (
-  id UUID PRIMARY KEY,
-  email TEXT UNIQUE,
-  username TEXT UNIQUE,
-  display_name TEXT,
-  avatar_url TEXT,
-  bio TEXT,
-  created_at TIMESTAMPTZ
-)
+```yaml
+version: '3.8'
 
--- 로드맵
-roadmaps (
-  id UUID PRIMARY KEY,
-  user_id UUID REFERENCES users,
-  title TEXT,
-  description TEXT,
-  category TEXT,
-  nodes JSONB,          -- 노드 구조
-  edges JSONB,          -- 연결 정보
-  is_public BOOLEAN,
-  fork_count INT,
-  star_count INT,
-  created_at TIMESTAMPTZ
-)
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: devigation-api
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://devigation:devigation@postgres:5432/devigation
+      - REDIS_URL=redis://redis:6379
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - devigation-network
 
--- 게시글
-posts (
-  id UUID PRIMARY KEY,
-  user_id UUID REFERENCES users,
-  title TEXT,
-  content TEXT,
-  excerpt TEXT,
-  tags TEXT[],
-  roadmap_id UUID REFERENCES roadmaps,
-  node_id TEXT,
-  like_count INT,
-  comment_count INT,
-  created_at TIMESTAMPTZ
-)
+  postgres:
+    image: postgres:16-alpine
+    container_name: devigation-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=devigation
+      - POSTGRES_PASSWORD=devigation
+      - POSTGRES_DB=devigation
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - devigation-network
 
--- 활동
-activities (
-  id UUID PRIMARY KEY,
-  user_id UUID REFERENCES users,
-  activity_type TEXT,   -- post, roadmap, comment, like, chat
-  target_id UUID,
-  score INT,
-  created_at TIMESTAMPTZ
-)
+  redis:
+    image: redis:7-alpine
+    container_name: devigation-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+      - ./docker/redis/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - devigation-network
+
+  minio:
+    image: minio/minio:latest
+    container_name: devigation-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=devigation
+      - MINIO_ROOT_PASSWORD=devigation123
+    volumes:
+      - minio-data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - devigation-network
+
+volumes:
+  postgres-data:
+  redis-data:
+  minio-data:
+
+networks:
+  devigation-network:
+    driver: bridge
 ```
 
-### ERD
+### Dockerfile (개발용)
 
+```dockerfile
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install pnpm
+RUN npm install -g pnpm
+
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
+
+# Install dependencies
+RUN pnpm install
+
+# Copy source code
+COPY . .
+
+# Generate Prisma client
+RUN pnpm prisma generate
+
+# Expose port
+EXPOSE 3000
+
+# Start development server
+CMD ["pnpm", "start:dev"]
 ```
-┌──────────┐       ┌───────────┐       ┌──────────┐
-│  users   │───┬───│  roadmaps │───────│  nodes   │
-└──────────┘   │   └───────────┘       └──────────┘
-               │          │
-               │   ┌──────┴──────┐
-               │   │             │
-          ┌────┴───┴──┐    ┌─────┴─────┐
-          │   posts   │    │  stars    │
-          └───────────┘    └───────────┘
-               │
-          ┌────┴────┐
-          │         │
-     ┌────┴───┐ ┌───┴────┐
-     │comments│ │ likes  │
-     └────────┘ └────────┘
+
+### Dockerfile.prod (프로덕션용)
+
+```dockerfile
+# Build stage
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+RUN npm install -g pnpm
+
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+
+COPY . .
+RUN pnpm prisma generate
+RUN pnpm build
+
+# Production stage
+FROM node:20-alpine AS production
+
+WORKDIR /app
+
+RUN npm install -g pnpm
+
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/prisma ./prisma
+
+ENV NODE_ENV=production
+
+EXPOSE 3000
+
+CMD ["node", "dist/main.js"]
+```
+
+## 🗄 데이터베이스 스키마 (Prisma)
+
+```prisma
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  username    String   @unique
+  displayName String?  @map("display_name")
+  avatarUrl   String?  @map("avatar_url")
+  bio         String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  roadmaps    Roadmap[]
+  posts       Post[]
+  comments    Comment[]
+  likes       Like[]
+  activities  Activity[]
+  followers   Follow[]  @relation("following")
+  following   Follow[]  @relation("follower")
+
+  @@map("users")
+}
+
+model Roadmap {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  title       String
+  description String?
+  category    String
+  nodes       Json     @default("[]")
+  edges       Json     @default("[]")
+  isPublic    Boolean  @default(true) @map("is_public")
+  forkCount   Int      @default(0) @map("fork_count")
+  starCount   Int      @default(0) @map("star_count")
+  forkedFrom  String?  @map("forked_from")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  posts       Post[]
+  stars       Star[]
+
+  @@map("roadmaps")
+}
+
+model Post {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  roadmapId    String?  @map("roadmap_id")
+  nodeId       String?  @map("node_id")
+  title        String
+  content      String
+  excerpt      String?
+  tags         String[]
+  likeCount    Int      @default(0) @map("like_count")
+  commentCount Int      @default(0) @map("comment_count")
+  viewCount    Int      @default(0) @map("view_count")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roadmap      Roadmap?  @relation(fields: [roadmapId], references: [id])
+  comments     Comment[]
+  likes        Like[]
+
+  @@map("posts")
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  postId    String   @map("post_id")
+  parentId  String?  @map("parent_id")
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
+  replies   Comment[] @relation("CommentReplies")
+
+  @@map("comments")
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  postId    String   @map("post_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@map("likes")
+}
+
+model Star {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  roadmapId String   @map("roadmap_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  roadmap   Roadmap @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roadmapId])
+  @@map("stars")
+}
+
+model Follow {
+  id          String   @id @default(uuid())
+  followerId  String   @map("follower_id")
+  followingId String   @map("following_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  follower    User @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@map("follows")
+}
+
+model Activity {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  activityType String   @map("activity_type")
+  targetId     String?  @map("target_id")
+  score        Int      @default(0)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user         User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("activities")
+}
 ```
 
 ## 🚀 시작하기
 
 ### 사전 요구사항
 
-- [Supabase CLI](https://supabase.com/docs/guides/cli)
-- Node.js 18.17+
-- Docker (로컬 개발용)
+- Docker 24.0+
+- Docker Compose 2.0+
+- Node.js 20 LTS (로컬 개발 시)
+- pnpm 8.0+
 
-### 설치
+### 빠른 시작 (Docker)
 
 ```bash
 # 저장소 클론
 git clone https://github.com/jiwon11/devigation-backend.git
 cd devigation-backend
 
-# Supabase CLI 설치
-npm install -g supabase
+# 환경 변수 설정
+cp .env.example .env.development
 
-# Supabase 프로젝트 초기화
-supabase init
+# Docker Compose로 실행
+docker-compose up -d
 
-# 로컬 Supabase 시작
-supabase start
+# 마이그레이션 실행
+docker-compose exec api pnpm prisma migrate dev
+
+# 시드 데이터 적용
+docker-compose exec api pnpm prisma db seed
+```
+
+### 로컬 개발 (Docker 없이)
+
+```bash
+# 의존성 설치
+pnpm install
+
+# 환경 변수 설정
+cp .env.example .env
+
+# Prisma 클라이언트 생성
+pnpm prisma generate
+
+# 마이그레이션 실행
+pnpm prisma migrate dev
+
+# 개발 서버 실행
+pnpm start:dev
 ```
 
 ### 환경 변수
 
 ```env
-# Supabase
-SUPABASE_URL=your_supabase_url
-SUPABASE_SERVICE_KEY=your_service_role_key
-SUPABASE_ANON_KEY=your_anon_key
+# App
+NODE_ENV=development
+PORT=3000
 
-# External Services (Optional)
-OPENAI_API_KEY=your_openai_key
-```
+# Database
+DATABASE_URL=postgresql://devigation:devigation@localhost:5432/devigation
 
-### 마이그레이션 실행
+# Redis
+REDIS_URL=redis://localhost:6379
 
-```bash
-# 마이그레이션 적용
-supabase db push
+# JWT
+JWT_SECRET=your-jwt-secret-key
+JWT_EXPIRES_IN=7d
 
-# 시드 데이터 적용
-supabase db seed
-```
+# OAuth - GitHub
+GITHUB_CLIENT_ID=your-github-client-id
+GITHUB_CLIENT_SECRET=your-github-client-secret
+GITHUB_CALLBACK_URL=http://localhost:3000/auth/github/callback
 
-### Edge Functions 배포
+# OAuth - Google
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_CALLBACK_URL=http://localhost:3000/auth/google/callback
 
-```bash
-# 개별 함수 배포
-supabase functions deploy roadmap-fork
+# Storage (MinIO)
+MINIO_ENDPOINT=localhost
+MINIO_PORT=9000
+MINIO_ACCESS_KEY=devigation
+MINIO_SECRET_KEY=devigation123
+MINIO_BUCKET=devigation
 
-# 모든 함수 배포
-supabase functions deploy
+# Frontend URL
+FRONTEND_URL=http://localhost:3001
 ```
 
 ## 📜 API 엔드포인트
 
-### REST API (PostgREST)
+### 인증 (Auth)
 
 | Method | Endpoint | 설명 |
 |--------|----------|------|
-| GET | `/rest/v1/roadmaps` | 로드맵 목록 조회 |
-| GET | `/rest/v1/roadmaps?id=eq.{id}` | 로드맵 상세 조회 |
-| POST | `/rest/v1/roadmaps` | 로드맵 생성 |
-| PATCH | `/rest/v1/roadmaps?id=eq.{id}` | 로드맵 수정 |
-| DELETE | `/rest/v1/roadmaps?id=eq.{id}` | 로드맵 삭제 |
+| GET | `/auth/github` | GitHub OAuth 로그인 |
+| GET | `/auth/github/callback` | GitHub 콜백 |
+| GET | `/auth/google` | Google OAuth 로그인 |
+| GET | `/auth/google/callback` | Google 콜백 |
+| POST | `/auth/refresh` | 토큰 갱신 |
+| POST | `/auth/logout` | 로그아웃 |
 
-### Edge Functions
+### 사용자 (Users)
 
-| Function | 설명 |
-|----------|------|
-| `POST /functions/v1/roadmap-fork` | 로드맵 Fork |
-| `POST /functions/v1/activity-score` | 활동 점수 계산 |
-| `POST /functions/v1/ai-recommend` | AI 추천 |
+| Method | Endpoint | 설명 |
+|--------|----------|------|
+| GET | `/users/me` | 내 정보 조회 |
+| PATCH | `/users/me` | 내 정보 수정 |
+| GET | `/users/:username` | 사용자 프로필 조회 |
+| GET | `/users/:id/activities` | 활동 내역 조회 |
+| POST | `/users/:id/follow` | 팔로우 |
+| DELETE | `/users/:id/follow` | 언팔로우 |
 
-### Realtime Channels
+### 로드맵 (Roadmaps)
 
-```typescript
-// 알림 구독
-supabase.channel('notifications')
-  .on('postgres_changes', {
-    event: 'INSERT',
-    schema: 'public',
-    table: 'notifications',
-    filter: `user_id=eq.${userId}`
-  }, handleNotification)
-  .subscribe()
-```
+| Method | Endpoint | 설명 |
+|--------|----------|------|
+| GET | `/roadmaps` | 로드맵 목록 조회 |
+| GET | `/roadmaps/:id` | 로드맵 상세 조회 |
+| POST | `/roadmaps` | 로드맵 생성 |
+| PATCH | `/roadmaps/:id` | 로드맵 수정 |
+| DELETE | `/roadmaps/:id` | 로드맵 삭제 |
+| POST | `/roadmaps/:id/fork` | 로드맵 Fork |
+| POST | `/roadmaps/:id/star` | 로드맵 Star |
 
-## 🔐 보안
+### 게시글 (Posts)
 
-### Row Level Security (RLS)
+| Method | Endpoint | 설명 |
+|--------|----------|------|
+| GET | `/posts` | 게시글 목록 조회 |
+| GET | `/posts/:id` | 게시글 상세 조회 |
+| POST | `/posts` | 게시글 작성 |
+| PATCH | `/posts/:id` | 게시글 수정 |
+| DELETE | `/posts/:id` | 게시글 삭제 |
+| POST | `/posts/:id/like` | 좋아요 |
+| DELETE | `/posts/:id/like` | 좋아요 취소 |
 
-```sql
--- 로드맵 RLS 정책 예시
-CREATE POLICY "Public roadmaps are viewable by everyone"
-ON roadmaps FOR SELECT
-USING (is_public = true);
+### API 문서
 
-CREATE POLICY "Users can CRUD their own roadmaps"
-ON roadmaps FOR ALL
-USING (auth.uid() = user_id);
-```
+Swagger UI: http://localhost:3000/api/docs
 
-### 인증 흐름
+## 🐳 Docker 명령어
 
-```
-1. 클라이언트 → Supabase Auth (OAuth)
-2. Supabase Auth → Provider (GitHub/Google)
-3. Provider → 인증 완료
-4. Supabase Auth → JWT 토큰 발급
-5. 클라이언트 → API 요청 (JWT 포함)
-6. RLS → 권한 검증 → 데이터 반환
+```bash
+# 전체 서비스 시작
+docker-compose up -d
+
+# 로그 확인
+docker-compose logs -f api
+
+# 특정 서비스 재시작
+docker-compose restart api
+
+# 전체 서비스 중지
+docker-compose down
+
+# 볼륨 포함 삭제
+docker-compose down -v
+
+# 프로덕션 빌드 & 실행
+docker-compose -f docker-compose.prod.yml up -d --build
 ```
 
 ## 📊 활동 점수 계산
 
 ```typescript
-// 활동 점수 가중치
-const ACTIVITY_WEIGHTS = {
-  post: 100,      // 게시글 작성
-  roadmap: 300,   // 로드맵 생성
-  comment: 10,    // 댓글 작성
-  like: 1,        // 좋아요 받음
-  chat: 1,        // 채팅 메시지
-};
+// src/modules/activity/activity.constants.ts
+export const ACTIVITY_WEIGHTS = {
+  POST: 100,       // 게시글 작성
+  ROADMAP: 300,    // 로드맵 생성
+  COMMENT: 10,     // 댓글 작성
+  LIKE: 1,         // 좋아요 받음
+  CHAT: 1,         // 채팅 메시지
+} as const;
 
-// 총 점수 계산
-const totalScore = activities.reduce((sum, activity) => {
-  return sum + (activity.count * ACTIVITY_WEIGHTS[activity.type]);
-}, 0);
+// 레벨 계산
+export const calculateLevel = (score: number): number => {
+  return Math.floor(Math.sqrt(score / 100)) + 1;
+};
 ```
 
 ## 🧪 테스트
@@ -311,9 +643,14 @@ const totalScore = activities.reduce((sum, activity) => {
 # 단위 테스트
 pnpm test
 
-# Edge Functions 테스트
-supabase functions serve --debug
-curl -X POST http://localhost:54321/functions/v1/roadmap-fork
+# E2E 테스트
+pnpm test:e2e
+
+# 테스트 커버리지
+pnpm test:cov
+
+# Docker 환경에서 테스트
+docker-compose exec api pnpm test
 ```
 
 ## 🔗 관련 저장소
