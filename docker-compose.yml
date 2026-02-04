@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: devigation-api
+    ports:
+      - '3000:3000'
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://devigation:devigation@postgres:5432/devigation
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=dev-secret-key
+      - FRONTEND_URL=http://localhost:3001
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - devigation-network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: devigation-postgres
+    ports:
+      - '5432:5432'
+    environment:
+      - POSTGRES_USER=devigation
+      - POSTGRES_PASSWORD=devigation
+      - POSTGRES_DB=devigation
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U devigation -d devigation']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - devigation-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: devigation-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - devigation-network
+
+  minio:
+    image: minio/minio:latest
+    container_name: devigation-minio
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    environment:
+      - MINIO_ROOT_USER=devigation
+      - MINIO_ROOT_PASSWORD=devigation123
+    volumes:
+      - minio-data:/data
+    command: server /data --console-address ':9001'
+    networks:
+      - devigation-network
+
+volumes:
+  postgres-data:
+  redis-data:
+  minio-data:
+
+networks:
+  devigation-network:
+    driver: bridge

@@ -1,0 +1,200 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  username    String   @unique
+  displayName String?  @map("display_name")
+  avatarUrl   String?  @map("avatar_url")
+  bio         String?
+  provider    String?  // github, google
+  providerId  String?  @map("provider_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  roadmaps     Roadmap[]
+  posts        Post[]
+  comments     Comment[]
+  likes        Like[]
+  activities   Activity[]
+  followers    Follow[]       @relation("following")
+  following    Follow[]       @relation("follower")
+  stars        Star[]
+  bookmarks    Bookmark[]
+  notifications Notification[] @relation("recipient")
+  sentNotifications Notification[] @relation("actor")
+
+  @@map("users")
+}
+
+model Roadmap {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  title       String
+  description String?
+  category    String
+  nodes       Json     @default("[]")
+  edges       Json     @default("[]")
+  isPublic    Boolean  @default(true) @map("is_public")
+  forkCount   Int      @default(0) @map("fork_count")
+  starCount   Int      @default(0) @map("star_count")
+  viewCount   Int      @default(0) @map("view_count")
+  forkedFrom  String?  @map("forked_from")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  posts Post[]
+  stars Star[]
+
+  @@index([userId])
+  @@index([category])
+  @@index([isPublic])
+  @@map("roadmaps")
+}
+
+model Post {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  roadmapId    String?  @map("roadmap_id")
+  nodeId       String?  @map("node_id")
+  title        String
+  slug         String   @unique
+  content      String
+  excerpt      String?
+  coverImage   String?  @map("cover_image")
+  tags         String[]
+  likeCount    Int      @default(0) @map("like_count")
+  commentCount Int      @default(0) @map("comment_count")
+  viewCount    Int      @default(0) @map("view_count")
+  isPublished  Boolean  @default(false) @map("is_published")
+  publishedAt  DateTime? @map("published_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roadmap   Roadmap?   @relation(fields: [roadmapId], references: [id])
+  comments  Comment[]
+  likes     Like[]
+  bookmarks Bookmark[]
+
+  @@index([userId])
+  @@index([roadmapId])
+  @@index([isPublished])
+  @@index([tags])
+  @@map("posts")
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  postId    String   @map("post_id")
+  parentId  String?  @map("parent_id")
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post    Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[] @relation("CommentReplies")
+
+  @@index([postId])
+  @@index([userId])
+  @@map("comments")
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  postId    String   @map("post_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@map("likes")
+}
+
+model Star {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  roadmapId String   @map("roadmap_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roadmap Roadmap @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roadmapId])
+  @@map("stars")
+}
+
+model Bookmark {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  postId    String   @map("post_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@map("bookmarks")
+}
+
+model Follow {
+  id          String   @id @default(uuid())
+  followerId  String   @map("follower_id")
+  followingId String   @map("following_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  follower  User @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@map("follows")
+}
+
+model Activity {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  activityType String   @map("activity_type") // post, roadmap, comment, like, chat
+  targetId     String?  @map("target_id")
+  targetType   String?  @map("target_type")
+  score        Int      @default(0)
+  metadata     Json?    @default("{}")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([activityType])
+  @@index([createdAt])
+  @@map("activities")
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  recipientId String   @map("recipient_id")
+  actorId     String?  @map("actor_id")
+  type        String   // follow, like, comment, mention
+  targetId    String?  @map("target_id")
+  targetType  String?  @map("target_type")
+  message     String?
+  isRead      Boolean  @default(false) @map("is_read")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  recipient User  @relation("recipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  actor     User? @relation("actor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([recipientId, isRead])
+  @@map("notifications")
+}
